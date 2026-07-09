@@ -1,4 +1,3 @@
-%% plot_ern_analysis.m
 % ERN grand average 파형 + mean amplitude 추출 + 통계
 %   채널: E4,E7,E54 평균 (frontocentral ROI)
 %   조건: NoGo-FA(error) vs Go-Hit(correct)

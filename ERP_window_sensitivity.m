@@ -1,4 +1,3 @@
-%% ern_window_sensitivity.m
 % ERN 측정창 민감도 분석
 %   여러 측정창에서 (1)조건효과 (2)집단x조건 상호작용이 일관된지 확인.
 %   데이터(subject별 FA/Hit ERP)는 한 번만 로드하고, 측정창만 바꿔 amplitude 재계산.
@@ -8,7 +7,7 @@
 
 clear; close all; clc;
 
-%% ===== 설정 =====
+%% ===== PARAMETERS =====
 proc_dir   = 'ERP/Data/T2/processed_data_resp_-400_600';
 Meta_dir   = 'ERP/Raw_Data_Info/NESTdata_fromCCPL_260604.xlsx';
 Pre_dir    = 'ERP/Data/T2/MADE_report_260704.csv';

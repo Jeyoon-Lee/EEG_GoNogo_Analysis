@@ -1,4 +1,3 @@
-%% ern_minfa_sensitivity.m
 % min_fa(최소 FA trial 기준) 민감도 분석
 %   측정창은 -20~50 ms 고정. min_fa를 바꿔가며 표본 수와 통계 변화를 본다.
 %   전체 subject 파형을 한 번만 로드하고, min_fa 필터만 바꿔 재계산.
