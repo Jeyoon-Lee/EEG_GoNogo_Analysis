@@ -1,0 +1,21 @@
+# ==== Data (excluded from repo) ====
+# 원본/처리 EEG 데이터 및 대용량 파일 전부 제외
+ERP/
+
+# 데이터 파일 확장자 (혹시 다른 위치에 있어도 제외)
+*.mff/
+*.set
+*.fdt
+*.mat
+*.zip
+*.csv
+*.xlsx
+*.xls
+
+# ==== OS / editor ====
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.asv
+*.m~
