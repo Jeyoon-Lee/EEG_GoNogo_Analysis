@@ -13,7 +13,7 @@ function [EEG, log, state] = get_MADE_filtered_data(data_name, cfg, log, OVERLAP
     [~, stem, ~] = fileparts(data_name);
     output_name = [output_dir filesep stem '_filtered_data' cfg.output_format];
     
-    % Checkpoint: 이미 filtering된 파일 있으면 로드하고 반환
+    % 이미 filtering된 파일 있으면 로드하고 반환
     if ~OVERLAP && isfile(output_name)
         fprintf("\nPassing %s...(already filtered)\n", data_name)
         % Load saved filtered data file
@@ -113,9 +113,6 @@ function [EEG, log, state] = get_MADE_filtered_data(data_name, cfg, log, OVERLAP
             EEG = eeg_checkset(EEG);
         end
     end
-
-    % EXTRA STEP: Count trials
-    edit_event_markers_raw_data_Korea;
 
     % STEP 6: Filter
     high_transband = cfg.highpass;

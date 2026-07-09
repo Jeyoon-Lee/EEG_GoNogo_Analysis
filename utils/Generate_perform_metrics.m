@@ -1,10 +1,5 @@
-% compute_performance_metrics.m
-% ------------------------------------------------------------------------
-% block/trial 태깅이 끝난 filtered_data(.set)를 읽어서 Go/No-Go 수행지표를
-% 계산하고 CSV 한 줄씩 append 한다.
-%
-%   전제: add_block_trial_to_events.m 로 EEG.event에 block/trial_global 등이
-%         이미 심어져 있어야 한다.
+% Add_block_event로 block/trial 태깅이 끝난 filtered_data(.set)를 읽어서 Go/No-Go 수행지표를
+% 계산하고 CSV 한 줄씩 append
 %
 %   trial 판정 (trial_global 로 이벤트를 묶어서):
 %     Go(cel=101)   + resp 있음 -> Hit,  RT = resp_lat - stm_lat
@@ -13,11 +8,10 @@
 %     NoGo(cel=102) + resp 없음 -> CR  (correct rejection)
 %
 %   RT valid 범위: Go Hit 한정 100~1500ms. (FA_RT는 raw)
-% ------------------------------------------------------------------------
 
 clear; clc;
 
-%% 설정
+%% ===== PARAMETERS =====
 filtered_dir  = 'ERP/Data/T2/filtered_data';
 report_path   = 'ERP/Data/T2/performance_metrics.csv';
 cel_marker    = 'stm+';    % cel(101/102)을 읽을 마커 (한 trial 내 모두 동일)
@@ -27,7 +21,6 @@ go_code       = '101';
 nogo_code     = '102';
 rt_valid      = [100 1500]; % Go Hit RT 유효범위 (ms)
 
-%% 파일 목록
 files = dir([filtered_dir filesep '*_filtered_data.set']);
 fprintf('%d개 파일 처리 시작\n', numel(files));
 
@@ -120,7 +113,7 @@ for i = 1:numel(files)
     ID    = string(id_tok);
     phase = string(phase_tok);
 
-    % ---- CSV 한 줄 append ----
+    % CSV 한 줄 append
     row = table( ...
         ID, phase, n_Blocks, total_trials, n_Go, n_NoGo, ...
         Hit, OE, FA, CR, Hit_rate, FA_rate, ...
@@ -148,7 +141,7 @@ else
 end
 fprintf('\nDone\n');
 
-%% ---- 로컬 헬퍼 ----
+%% ===== Helpers =====
 function m = mean_or_nan(x)
     if isempty(x), m = NaN; else, m = mean(x); end
 end

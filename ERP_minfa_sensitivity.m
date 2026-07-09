@@ -1,10 +1,10 @@
 % min_fa(최소 FA trial 기준) 민감도 분석
-%   측정창은 -20~50 ms 고정. min_fa를 바꿔가며 표본 수와 통계 변화를 본다.
-%   전체 subject 파형을 한 번만 로드하고, min_fa 필터만 바꿔 재계산.
+%   측정창은 -20~50 ms 고정. min_fa를 바꿔가며 표본 수와 통계 변화를 봄
+%   전체 subject 파형을 한 번만 로드하고, min_fa 필터만 바꿔 재계산
 
 clear; close all; clc;
 
-%% ===== 설정 =====
+%% ===== PARAMETERS =====
 proc_dir   = 'ERP/Data/T2/processed_data_resp_-400_600';
 Meta_dir   = 'ERP/Raw_Data_Info/NESTdata_fromCCPL_260604.xlsx';
 Pre_dir    = 'ERP/Data/T2/MADE_report_260704.csv';
@@ -13,7 +13,7 @@ baseline_window = [-200 -100];
 ern_window = [-20 50];               % 고정
 minfa_list = [4 6 8 10 15];          % 테스트할 기준
 
-%% ===== 메타 매칭 (전체) =====
+%% 메타 매칭 (전체)
 Meta_T = readtable(Meta_dir);
 Pre_T  = readtable(Pre_dir);
 Pre_T.ID = string(regexp(Pre_T.filename, 'NT\d{3}', 'match', 'once'));
@@ -27,7 +27,7 @@ all_files = Pre_T.filename(has_dx);
 all_dx    = Pre_T.Diagnosis(has_dx);
 all_fa    = Pre_T.n_epoch_nogo_fa(has_dx);
 
-%% ===== 전체 subject 파형 수집 (한 번만) =====
+%% 전체 subject 파형 수집 (한 번만)
 % 각 subject의 FA/Hit ERP(ROI 평균, -20~50 mean amp까지) + FA수 + 진단 저장
 fprintf('전체 %d명 파형 로드 중...\n', numel(all_files));
 [fa_amp, hit_amp, keep_dx, keep_fa] = deal([]);
@@ -59,7 +59,7 @@ for i = 1:numel(all_files)
 end
 fprintf('로드 완료: %d명\n\n', numel(fa_amp));
 
-%% ===== 각 min_fa 기준에서 통계 =====
+%% 각 min_fa 기준에서 통계
 fprintf('측정창 고정: %d~%d ms | ROI %s\n', ern_window(1),ern_window(2), strjoin(roi_labels,'+'));
 fprintf('%-8s %6s %6s %6s %11s %8s %9s %8s\n', ...
     'min_fa','N','ASD','TD','Cond p','dz','Intx p','dGroup');
@@ -96,7 +96,7 @@ fprintf(' - dGroup 양수 = ASD ERN 감소. 기준 무관하게 방향 일관되
 fprintf(' - Intx p: 표본(검정력)과 측정정밀도의 트레이드오프로 변동 가능.\n');
 
 
-%% ===== Local functions =====
+%% ===== Helpers =====
 function [ie, ic] = get_cond_idx(EEG)
     n = EEG.trials; gg = nan(1,n); ac = nan(1,n);
     for e = 1:n

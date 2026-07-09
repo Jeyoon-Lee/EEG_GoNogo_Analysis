@@ -30,7 +30,7 @@ cfg.highpass                = 0.3; % Hz
 cfg.lowpass                 = 50; % Hz
 
 cfg.epoch_data              = true;
-cfg.task_event_markers      = {'stm+'}; % {'resp'} or {'stim+'}
+cfg.task_event_markers      = {'stm+'}; % {'resp'} or {'stim+'} % 0 sec 기준점
 cfg.task_epoch_length       = [-0.2 0.8]; % [-0.4 0.6] for resp, [-0.2 0.8] for stim+ % second
 
 cfg.rest_epoch_length       = 0;
@@ -95,6 +95,7 @@ for subj = 1:length(datafile_names)
     end
 
     % get_MADE_processed_data (STEP 12-)
+    % 기준 marker stm+, resp로 고정
     [EEG, log, state] = get_MADE_processed_data(EEG, cur_dname, cfg, log, state, overwrite);
     if log.skip
         append_report_row(log, cur_dname, cfg);

@@ -19,7 +19,7 @@ function [EEG, log, state] = get_MADE_ica_data(EEG, data_name, cfg, log, state, 
     [~, stem, ~] = fileparts(data_name);
     output_name = [output_dir filesep stem '_ica_data' cfg.output_format];
 
-    % ===== Checkpoint: 이미 ICA까지 끝난 파일이 있으면 로드하고 반환 =====
+    % 이미 ICA까지 끝난 파일이 있으면 로드하고 반환 =====
     if ~OVERLAP && isfile(output_name)
         fprintf("\nPassing %s...(already ICA-cleaned)\n", data_name)
         if strcmp(cfg.output_format, '.set')
@@ -107,9 +107,9 @@ function [EEG, log, state] = get_MADE_ica_data(EEG, data_name, cfg, log, state, 
         end
     end
 
-    % ==== bad channel 라벨 기록 (반드시 pop_select로 제거하기 '전'에) ====
-    % 이 시점 EEG_copy는 아직 채널 제거 전이라 인덱스가 정확히 맞는다.
-    % 인덱스는 채널 구성에 종속돼 헷갈리므로 라벨로만 저장한다.
+    % bad channel 라벨 기록 (반드시 pop_select로 제거하기 '전'에)
+    % 이 시점 EEG_copy는 아직 채널 제거 전이라 인덱스가 정확히 맞음
+    % 인덱스는 채널 구성에 종속돼 헷갈리므로 라벨로만 저장
     if numel(ica_prep_badChans) == 0
         log.ica_preparation_bad_channels = 'none';
     else
@@ -158,11 +158,11 @@ function [EEG, log, state] = get_MADE_ica_data(EEG, data_name, cfg, log, state, 
     log.length_ica_data = EEG_copy.trials;   % ICA에 들어간 epoch 수
     EEG_copy = eeg_checkset(EEG_copy);
 
-    % [RANK] 데이터의 실제 rank를 계산해서 PCA 차원으로 명시한다.
+    % [RANK] 데이터의 실제 rank를 계산해서 PCA 차원으로 명시
     %   reference 제거(예: E65)로 rank가 채널수보다 작으면, PCA 미지정 시 runica가
-    %   IC를 채널수보다 적게 만들어 icaweights가 직사각이 되고 -> STEP 10 ADJUST가 스킵됨.
-    %   'pca'로 IC 수를 rank에 맞추면 icaweights가 rank×rank 정사각이 되어 ADJUST가 항상 작동.
-    %   평균 제거 후 계산해 EEG 채널 간 높은 상관에 의한 rank 과대추정을 줄인다.
+    %   IC를 채널수보다 적게 만들어 icaweights가 직사각이 되고 -> STEP 10 ADJUST가 스킵됨
+    %   'pca'로 IC 수를 rank에 맞추면 icaweights가 rank×rank 정사각이 되어 ADJUST가 항상 작동
+    %   평균 제거 후 계산해 EEG 채널 간 높은 상관에 의한 rank 과대추정을 줄임
     tmp_for_rank = EEG_copy.data(:, :);
     tmp_for_rank = double(tmp_for_rank) - mean(double(tmp_for_rank), 2);
     data_rank = rank(tmp_for_rank);
@@ -196,25 +196,25 @@ function [EEG, log, state] = get_MADE_ica_data(EEG, data_name, cfg, log, state, 
     EEG_copy = eeg_checkset(EEG_copy);
 
     % [RANK-DEFICIENT 대응] 원본 MADE는 icaweights가 정사각(IC수=채널수)일 때만
-    % ADJUST를 실행했다. 그러나 reference 제거로 rank가 채널수보다 작으면 pop_runica가
+    % ADJUST를 실행. 그러나 reference 제거로 rank가 채널수보다 작으면 pop_runica가
     % rank를 올바르게 감지해 IC를 rank만큼만 생성하므로(=ghost IC 없음, 건강한 상태)
-    % icaweights는 항상 IC수×채널수 직사각이 된다. 이 경우에도 ADJUST는 icawinv(채널×IC)
-    % 기반으로 IC 수를 세어 정상 동작한다. 따라서 정사각 대신 "IC가 2개 이상"인지로 판단한다.
+    % icaweights는 항상 IC수×채널수 직사각이 됨. 이 경우에도 ADJUST는 icawinv(채널×IC)
+    % 기반으로 IC 수를 세어 정상 동작함. 따라서 정사각 대신 "IC가 2개 이상"인지로 판단함.
     if size(EEG_copy.icawinv, 2) >= 2
         adjust_report = [output_dir filesep stem '_adjust_report'];
 
         % [ICAACT 직접 계산] ADJUST의 icaact 재계산 코드(adjusted_ADJUST 154번)는
         % IC수=채널수를 가정해 size(EEG.data,1)로 reshape하므로, pca로 rank 축소된
-        % 경우(IC수<채널수) 요소 개수 불일치로 reshape 에러가 난다.
+        % 경우(IC수<채널수) 요소 개수 불일치로 reshape 에러가 남.
         % 따라서 icachansind(ICA에 실제 쓰인 채널)만 골라 icaact를 올바른 IC 차원으로
-        % 미리 계산해 채워두면, ADJUST가 재계산을 건너뛰어 에러를 피한다.
+        % 미리 계산해 채워두면, ADJUST가 재계산을 건너뛰어 에러를 피함
         icaact_2d = (EEG_copy.icaweights * EEG_copy.icasphere) ...
                     * EEG_copy.data(EEG_copy.icachansind, :);
         EEG_copy.icaact = reshape(icaact_2d, size(icaact_2d,1), ...
                                   EEG_copy.pnts, EEG_copy.trials);
 
         % [TRY-CATCH] ADJUST 내부가 실패해도(EM 'Negative Discriminant' 등 데이터 분포
-        % 문제, 또는 기타 내부 에러) 파이프라인이 멈추지 않도록 감싼다. 실패한 subject는
+        % 문제, 또는 기타 내부 에러) 파이프라인이 멈추지 않도록 감쌈. 실패한 subject는
         % IC를 제거하지 않고(badICs=[]) adjust_performed에 사유를 기록해 나중에 수동 검수.
         try
             badICs = adjusted_ADJUST(EEG_copy, adjust_report);
