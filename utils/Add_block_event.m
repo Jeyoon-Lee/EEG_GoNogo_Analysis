@@ -1,38 +1,34 @@
-% filtered_data(.set)의 EEG.event에 block/trial 번호를 추가
+function EEG = Add_block_event(EEG, cur_dname, cfg)
+% ADD_BLOCK_EVENT  단일 EEG의 EEG.event에 block/trial 번호 필드를 추가
+%
+%   EEG = Add_block_event(EEG)                 % 태깅만
+%   EEG = Add_block_event(EEG, cur_dname, cfg) % 태깅 + filtered_data 파일에 저장
 %
 %   심는 필드 3개:
 %     - block           : 몇 번째 block인지 (1부터)
 %     - trial_in_block  : 그 block 안에서 몇 번째 trial (block마다 1로 리셋)
 %     - trial_global    : 전체 통틀어 몇 번째 trial (1부터 쭉)
-%   
+%
 %   기준점:
 %   trial 경계 : 'bgin' (모든 trial에 있으므로 이걸로 셈. bgin 하나 = trial 하나)
 %   block 경계 : 직전 'TRSP' -> 다음 'bgin' gap이 gap_thresh_samp 초과 시 새 block.
 %                (검증된 계산 방식: TRSP(k) -> bgin(k+1) 간격)
 %
-%   첫 bgin 이전 이벤트는 block=0, trial=0.
-% 
+%   첫 bgin 이전 이벤트는 block=0, trial=0
+%
+%   계산이 불가능한 경우(이벤트/bgin 없음, bgin·TRSP 개수 불일치)에는 경고만 내고
+%   EEG를 그대로(필드 미추가) 반환 (이 경우 저장도 하지 않음)
+%
+%   cur_dname, cfg가 주어지고 cfg.save_interim_result == 1이면, 태깅 성공 후
+%   get_MADE_filtered_data가 저장한 것과 동일한 위치/이름의 filtered_data 파일을
+%   덮어써서 block/trial 필드를 디스크에도 남김
 
-clear; clc;
-
-%% ===== PARAMETERS =====
-filtered_dir    = 'ERP/Data/T2/filtered_data';
-trial_marker    = 'bgin';
-end_marker      = 'TRSP';
-new_fields      = {'block', 'trial_in_block', 'trial_global'};
-gap_thresh_samp = 1000;   % block 경계 gap 임계(샘플). trial 간<10ms, block 간>14초. <- 직접 확인함
-expected_trials = 320;    % 8 block x 40 trial
-
-files = dir([filtered_dir filesep '*_filtered_data.set']);
-fprintf('%d개 파일 처리 시작\n', numel(files));
-
-skipped = {};   % 건너뛴 subject를 모아뒀다가 마지막에 한 번에 출력
-
-for i = 1:numel(files)
-    fname = files(i).name;
-    fprintf('\n(%d/%d) %s\n', i, numel(files), fname);
-
-    EEG = pop_loadset('filename', fname, 'filepath', filtered_dir);
+    %% ===== PARAMETERS =====
+    trial_marker    = 'bgin';
+    end_marker      = 'TRSP';
+    new_fields      = {'block', 'trial_in_block', 'trial_global'};
+    gap_thresh_samp = 1000;   % block 경계 gap 임계(샘플). trial 간<10ms, block 간>14초. <- 직접 확인함
+    expected_trials = 320;    % 8 block x 40 trial
 
     % 이미 field 존재할 경우 제거
     present = new_fields(isfield(EEG.event, new_fields));
@@ -43,9 +39,8 @@ for i = 1:numel(files)
 
     nEv = numel(EEG.event);
     if nEv == 0
-        skipped{end+1} = sprintf('%s: 이벤트 없음', fname); %#ok<SAGROW>
-        warning('  이벤트 없음. 건너뜀.');
-        continue;
+        warning('Add_block_event: 이벤트 없음. block/trial 필드 미추가.');
+        return;
     end
 
     types = {EEG.event.type};
@@ -56,23 +51,20 @@ for i = 1:numel(files)
 
     nBgin = numel(bginIdx);
     nTRSP = numel(TRSPIdx);
-    
-    %  SKIP : gap 계산이 불가능한 경우
+
+    %  gap 계산이 불가능한 경우 -> 필드 미추가 후 반환
     if nBgin == 0
-        skipped{end+1} = sprintf('%s: bgin 0개', fname); %#ok<SAGROW>
-        warning('  bgin이 0개. 건너뜀.');
-        continue;
+        warning('Add_block_event: bgin이 0개. block/trial 필드 미추가.');
+        return;
     end
     if nBgin ~= nTRSP
-        skipped{end+1} = sprintf('%s: bgin %d / TRSP %d 불일치', fname, nBgin, nTRSP); %#ok<SAGROW>
-        warning('  bgin(%d)과 TRSP(%d) 개수 불일치. 건너뜀.', nBgin, nTRSP);
-        continue;
+        warning('Add_block_event: bgin(%d)과 TRSP(%d) 개수 불일치. block/trial 필드 미추가.', nBgin, nTRSP);
+        return;
     end
 
     % 320 trials이 아니어도 처리하되 flag만
     if nBgin ~= expected_trials
-        skipped{end+1} = sprintf('%s: bgin %d개 (기대 %d) - 처리함', fname, nBgin, expected_trials); %#ok<SAGROW>
-        warning('  bgin이 %d개 (기대 %d). 처리는 하되 flag.', nBgin, expected_trials);
+        warning('Add_block_event: bgin이 %d개 (기대 %d). 처리는 하되 확인 필요.', nBgin, expected_trials);
     end
 
     % 각 bgin(=trial)의 block 번호 계산 (검증된 벡터 방식)
@@ -120,22 +112,30 @@ for i = 1:numel(files)
     nBlocks = max(block_num);
     fprintf('  block 수: %d, 총 trial 수: %d\n', nBlocks, max(tglob_num));
     if nBlocks ~= 8
-        skipped{end+1} = sprintf('%s: block이 %d개 (기대 8)', fname, nBlocks); %#ok<SAGROW>
+        warning('Add_block_event: block이 %d개 (기대 8).', nBlocks);
         for b = 1:nBlocks
-            skipped{end+1} = sprintf('    block %d: %d trials', b, sum(block_of_bgin==b)); %#ok<SAGROW>
+            fprintf('    block %d: %d trials\n', b, sum(block_of_bgin==b));
         end
     end
 
-    EEG = pop_saveset(EEG, 'filename', fname, 'filepath', filtered_dir);
-end
-
-% 건너뛴/이상 subject 한 번에 출력
-fprintf('\n===== 확인 필요 subject =====\n');
-if isempty(skipped)
-    fprintf('없음\n');
-else
-    for s = 1:numel(skipped)
-        fprintf('%s\n', skipped{s});
+    % filtered_data 파일에 태깅 결과 저장
+    % get_MADE_filtered_data와 동일한 위치/이름으로 덮어써서 trial_global 등
+    % 필드가 디스크 파일에도 남게 함
+    if nargin >= 3 && isfield(cfg, 'save_interim_result') && cfg.save_interim_result == 1
+        output_dir = [cfg.output_location filesep 'filtered_data'];
+        [~, stem, ~] = fileparts(cur_dname);
+        if strcmp(cfg.output_format, '.set')
+            EEG = eeg_checkset(EEG);
+            EEG = pop_saveset(EEG, 'filename', [stem '_filtered_data.set'], 'filepath', output_dir);
+        elseif strcmp(cfg.output_format, '.mat')
+            matpath = [output_dir filesep stem '_filtered_data.mat'];
+            if isfile(matpath)
+                S = load(matpath, 'log');   % 기존 log 보존해서 함께 저장
+                log = S.log; %#ok<NASGU>
+            else
+                log = []; %#ok<NASGU>
+            end
+            save(matpath, 'EEG', 'log');
+        end
     end
 end
-fprintf('\nDone\n');

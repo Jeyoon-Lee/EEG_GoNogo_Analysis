@@ -80,9 +80,8 @@ for subj = 1:length(datafile_names)
         continue;
     end
     
-    Add_block_event
-    Generate_perform_metrics
-    
+    EEG = Add_block_event(EEG, cur_dname, cfg);
+
     %% get_MADE_ica_data (STEP 8-11)
     % ICA 준비 -> ICA 실행 _> ADJUST -> IC 제거
     % output save at ouput_location/ica_data
@@ -106,6 +105,8 @@ for subj = 1:length(datafile_names)
     append_report_row(log, cur_dname, cfg);
 end
 fprintf("Done\n")
+
+Generate_perform_metrics
 
 %% HELPERS %%
 function log = init_log()
