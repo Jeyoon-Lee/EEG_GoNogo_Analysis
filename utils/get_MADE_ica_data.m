@@ -11,7 +11,7 @@ function [EEG, log, state] = get_MADE_ica_data(EEG, data_name, cfg, log, state, 
 %
 %   입력 EEG는 STEP 7까지 끝난 상태(bad channel 제거 + reference 제거)라고 가정.
 
-    output_dir = [cfg.output_location filesep 'ica_data(2)'];
+    output_dir = [cfg.output_location filesep 'ica_data'];
     if ~isfolder(output_dir)
         mkdir(output_dir);
     end

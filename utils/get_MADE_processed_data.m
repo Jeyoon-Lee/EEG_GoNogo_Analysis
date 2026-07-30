@@ -213,8 +213,13 @@ function [EEG, log, state] = get_MADE_processed_data(EEG, data_name, cfg, log, s
     %   GoNogo: 1=Go, 2=NoGo / Accuracy: Go 1=Hit,0=miss / NoGo 0=FA(error),1=CR
     n_go_hit = 0; n_go_miss = 0; n_nogo_fa = 0; n_nogo_cr = 0; n_uncat = 0;
     for e = 1:EEG.trials
-        lat = cell2mat(EEG.epoch(e).eventlatency);
-        i0  = find(lat == 0, 1);                    % 기준 이벤트
+        lat_raw = EEG.epoch(e).eventlatency;
+        if iscell(lat_raw) 
+            lat = cell2mat(lat_raw);
+        else
+            lat = lat_raw;
+        end
+        i0  = find(lat == 0, 1); % 기준 이벤트
         if isempty(i0), n_uncat = n_uncat + 1; continue; end
         gg = EEG.epoch(e).eventGoNogo;   if iscell(gg), gg = gg{i0}; end
         ac = EEG.epoch(e).eventAccuracy; if iscell(ac), ac = ac{i0}; end
