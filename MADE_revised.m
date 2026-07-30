@@ -9,10 +9,10 @@ overwrite = false;
 % reference channel E65로 고정
 %% %%%%%%%%%%%%%%%%%%%%%%%%    PARAMETERS    %%%%%%%%%%%%%%%%%%%%%%%%%%
 cfg = struct();
-cfg.rawdata_location        = 'ERP/Raw_Data/T2';
-cfg.output_location         = 'ERP/Data/T2';
+cfg.rawdata_location        = 'ERP/Raw_Data/error_files';
+cfg.output_location         = 'ERP/Data/error_files';
 cfg.channel_locations       = 'ERP/Raw_Data_Info/download65channels.ced';
-cfg.report_name             = 'MADE_report_260704.csv';
+cfg.report_name             = 'MADE_report_260713.csv';
 
 cfg.adjust_time_offset      = true; % need to be checked
     cfg.filter_timeoffset   = 0; % ms
@@ -30,8 +30,8 @@ cfg.highpass                = 0.3; % Hz
 cfg.lowpass                 = 50; % Hz
 
 cfg.epoch_data              = true;
-cfg.task_event_markers      = {'stm+'}; % {'resp'} or {'stim+'} % 0 sec 기준점
-cfg.task_epoch_length       = [-0.2 0.8]; % [-0.4 0.6] for resp, [-0.2 0.8] for stim+ % second
+cfg.task_event_markers      = {'resp'}; % {'resp'} or {'stim+'} % 0 sec 기준점
+cfg.task_epoch_length       = [-0.4 0.6]; % [-0.4 0.6] for resp, [-0.2 0.8] for stim+ % second
 
 cfg.rest_epoch_length       = 0;
 cfg.overlap_epoch           = false;
@@ -81,11 +81,15 @@ for subj = 1:length(datafile_names)
     end
     
     EEG = Add_block_event(EEG, cur_dname, cfg);
+    
+    if ~isfield(EEG.event, "trial_in_block")
+        fprintf("/nPassing %d.../n", cur_dname);
+        continue;
+    end
 
     %% get_MADE_ica_data (STEP 8-11)
     % ICA 준비 -> ICA 실행 _> ADJUST -> IC 제거
     % output save at ouput_location/ica_data
-    % 반드시 함수 내부 output_dir 확인할 것
     [EEG,log, state] = get_MADE_ica_data(EEG, cur_dname, cfg, log, state, overwrite);
 
     if log.skip
@@ -94,7 +98,7 @@ for subj = 1:length(datafile_names)
     end
 
     % get_MADE_processed_data (STEP 12-)
-    % 기준 marker stm+, resp로 고정
+    % 기준 marker를 stm+, resp로 고정
     [EEG, log, state] = get_MADE_processed_data(EEG, cur_dname, cfg, log, state, overwrite);
     if log.skip
         append_report_row(log, cur_dname, cfg);
@@ -106,7 +110,8 @@ for subj = 1:length(datafile_names)
 end
 fprintf("Done\n")
 
-Generate_perform_metrics
+generate_perform_metrics([cfg.output_location filesep 'filtered_data'], ...
+    [cfg.output_location filesep 'performance_metrics.csv'])
 
 %% HELPERS %%
 function log = init_log()
