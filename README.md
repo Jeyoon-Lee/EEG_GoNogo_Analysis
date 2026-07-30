@@ -22,7 +22,7 @@ EEGLAB plugins used:
 - **`MADE_revised.m`** — Top-level driver: sets `cfg` (paths, filters, epoching) and
   runs the MADE preprocessing pipeline (filter → ICA → epoching) over the raw dataset.
 
-### ERP analysis (my own work)
+### ERP analysis
 
 - **`Compute_ERP.m`** — Computes grand-average ERP waveforms and mean amplitudes over a
   frontocentral ROI (FA/error vs Hit/correct), and runs the condition, directionality,
